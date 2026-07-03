@@ -1,42 +1,11 @@
-name: Docker build and push
+# ---- Build stage ----
+FROM python:3.12 AS builder
+WORKDIR /app
+COPY app.py .
 
-on:
-  push:
-    branches: [main]
-
-permissions:
-  contents: read
-  id-token: write
-
-env:
-  REGION: us-central1
-  IMAGE: us-central1-docker.pkg.dev/prasanth-free/my-repo/hello-app
-
-jobs:
-  build-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: 'projects/737506290403/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-          service_account: 'github-actions-sa@prasanth-free.iam.gserviceaccount.com'
-
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
-
-      - name: Build image
-        run: |
-          docker build -t ${{ env.IMAGE }}:${{ github.sha }} \
-                       -t ${{ env.IMAGE }}:latest .
-
-      - name: Push image
-        run: |
-          docker push ${{ env.IMAGE }}:${{ github.sha }}
-          docker push ${{ env.IMAGE }}:latest
+# ---- Runtime stage ----
+FROM python:3.12-slim
+WORKDIR /app
+COPY --from=builder /app/app.py .
+EXPOSE 8080
+CMD ["python3", "app.py"]
