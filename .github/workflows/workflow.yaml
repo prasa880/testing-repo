@@ -1,0 +1,14 @@
+name: Prasanth test workflow
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  first-job:
+    runs-on: ubuntu-latest  
+    steps:
+      - name: Say hello
+        run: echo "Hello from Prasanth workflow"
+
+
